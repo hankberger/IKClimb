@@ -1,7 +1,7 @@
 //@ts-nocheck
 import * as THREE from 'three'
 import './style.css'
-import { AnimationMixer, Bone, Color, CullFaceBack, Mesh, Object3D, Vector2, Vector3, Vector4 } from 'three';
+import { AnimationMixer, Bone, Color, CompressedPixelFormat, CullFaceBack, Mesh, Object3D, Vector2, Vector3, Vector4 } from 'three';
 import { MapControls, OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 
@@ -46,8 +46,27 @@ function onWindowResize() {
 window.addEventListener('resize', onWindowResize);
 
 //UI
-const ui = document.getElementById("check");
-const solver = false;
+const jl = document.getElementById("yeet");
+let jointLimits = true;
+
+jl?.addEventListener("change", (e)=>{
+  jointLimits = !jointLimits;
+  // console.log(jointLimits);
+})
+
+const ccdBtn = document.getElementById("ccd");
+const fabrikBtn = document.getElementById("fabrik");
+let ccd = true;
+
+ccdBtn?.addEventListener("change", (e)=>{
+  ccd = !ccd;
+  console.log(ccd);
+})
+
+fabrikBtn?.addEventListener("change", (e) =>{
+  ccd = !ccd;
+  console.log(ccd);
+})
 
 // ui?.addEventListener("change",(e)=>{
   
@@ -186,6 +205,8 @@ let a5 = .3;
 let l6 = .1;
 let a6 = .3;
 
+let totalLength = l0+l1+l2+l3+l4+l5+l6;
+
 let start_l1 = new Vector3();
 let start_l2 = new Vector3();
 let start_l3 = new Vector3();
@@ -226,7 +247,7 @@ function solve(){
   } else {
     a6 -= angleDiff;
   }
-  a6 = Math.max(-Math.PI/3, Math.min(Math.PI/3, a6));
+  if(jointLimits) a6 = Math.max(-Math.PI/3, Math.min(Math.PI/3, a6));
 
   fk();
 
@@ -245,7 +266,7 @@ function solve(){
   } else {
     a5 -= angleDiff;
   }
-  a5 = Math.max(-Math.PI/2, Math.min(.1, a5));
+  if(jointLimits) a5 = Math.max(-Math.PI/2, Math.min(.1, a5));
 
   fk();
 
@@ -265,7 +286,7 @@ function solve(){
     a4 -= angleDiff;
   }
 
-  a4 = Math.max(-Math.PI/2, Math.min(Math.PI/2, a4));
+  if(jointLimits) a4 = Math.max(-Math.PI/2, Math.min(Math.PI/2, a4));
 
   fk();
 
@@ -285,7 +306,7 @@ function solve(){
     a3 -= angleDiff;
   }
 
-  // a3 = Math.max(-Math.PI/2, Math.min(Math.PI/2, a3));
+  a3 = Math.max(-Math.PI/2, Math.min(Math.PI/2, a3));
 
   fk();
   
@@ -305,7 +326,7 @@ function solve(){
       a2 -= angleDiff;
     }
 
-    a2 = Math.max(-Math.PI/2, Math.min(.1, a2));
+    if(jointLimits) a2 = Math.max(-Math.PI/2, Math.min(.1, a2));
 
   fk();
 
@@ -324,7 +345,7 @@ function solve(){
   } else {
     a1 -= angleDiff;
   }
-  a1 = Math.max(-Math.PI/3, Math.min(Math.PI/3, a1));
+  if(jointLimits) a1 = Math.max(-Math.PI/3, Math.min(Math.PI/3, a1));
 
   fk();
 
@@ -347,10 +368,6 @@ function solve(){
   // a0 = Math.max(-Math.PI/3, Math.min(Math.PI/3, a0));
 
   fk();
-
-  
-
-  
 }
 
 function subVecs(v1: Vector3, v2: Vector3){
@@ -373,6 +390,7 @@ var render = function () {
 
   meshList = [];
   const rootMat = new THREE.MeshStandardMaterial({color: 0xffffff});
+  const pantMat = new THREE.MeshStandardMaterial({color: 0x000055});
   const handMat = new THREE.MeshStandardMaterial({color: 0x000000})
   const shirtMat = new THREE.MeshStandardMaterial({color: 0xaa1100})
   const rootGeo = new THREE.BoxGeometry(l0, .1, .1);
@@ -404,11 +422,17 @@ var render = function () {
   l3Mesh.position.set(start_l3.x, start_l3.y, 0);
   l3Mesh.rotateZ(a0+a1+a2+a3);
   l3Mesh.castShadow = true;
-  const body = new THREE.BoxGeometry(.5, 1, .2);
-  body.applyMatrix4( new THREE.Matrix4().makeTranslation( l3/2, .25, 0 ) );
+  const body = new THREE.BoxGeometry(.5, .75, .2);
+  body.applyMatrix4( new THREE.Matrix4().makeTranslation( l3/2, .15, 0 ) );
   const bodyMesh = new THREE.Mesh(body, shirtMat);
   bodyMesh.position.set(l3Mesh.position.x, l3Mesh.position.y, 0);
   bodyMesh.rotateZ(l3Mesh.rotation.z)
+  const leg = new THREE.BoxGeometry(.5, 1, .2);
+  leg.applyMatrix4( new THREE.Matrix4().makeTranslation( l3/2, 1, 0 ) );
+  const legMesh = new THREE.Mesh(leg, pantMat);
+  legMesh.position.set(l3Mesh.position.x, l3Mesh.position.y, 0);
+  legMesh.rotateZ(l3Mesh.rotation.z)
+  
   const head = new THREE.SphereGeometry(.2, 16, 16);
   head.applyMatrix4( new THREE.Matrix4().makeTranslation( l3/2, -.4, 0 ) );
   const headMesh = new Mesh(head, rootMat);
@@ -422,6 +446,7 @@ var render = function () {
   meshList.push(l3Mesh);
   meshList.push(bodyMesh);
   meshList.push(headMesh);
+  meshList.push(legMesh)
 
   const l4Geo = new THREE.BoxGeometry(l4, .1, .1);
   l4Geo.applyMatrix4( new THREE.Matrix4().makeTranslation( l4/2, 0, 0 ) );
@@ -447,8 +472,14 @@ var render = function () {
   l6Mesh.castShadow = true;
   meshList.push(l6Mesh);
 
-  fk();
-  solve();
+  if(ccd){
+    fk();
+    solve();
+  } else {
+
+    randomSolve();
+  }
+  
 
   for(let i = 0; i < meshList.length; i++){
     scene.add(meshList[i]);
@@ -465,23 +496,171 @@ var render = function () {
 
 render();
 
-// let whichHand = true;
+// //Random Solver:
+function randomSolve(){
+  const dist = new Vector3();
+  dist.copy(goalPos);
+  dist.sub(endpoint);
 
-// document.addEventListener("click", (e)=>{
-//     e.preventDefault();
+  const randomAngle = (Math.random()*2*Math.PI);
+  // console.log(randomAngle, a0);
+  let newEndpoint = new Vector3(Math.cos(randomAngle+a1+a2+a3+a4+a5+a6)*l6, Math.sin(randomAngle+a1+a2+a3+a4+a5+a6)*l6, 0).add(start_l6)
+  let newToGoal = new Vector3();
+  // newToGoal.copy(goalPos);
+  // newToGoal.sub(newEndpoint);
+ 
+  // if(newToGoal.length() < dist.length()){
+  //   a0 = randomAngle;
+  //   if(a0 >= Math.PI) a0 = 0;
+  //   return;
+  // }
 
-//     if(whichHand){
-//         for(const bone of meshList){
-//             bone.geometry.applyMatrix4( new THREE.Matrix4().makeTranslation( 0, -.5, 0 ) );
-//             // bone.geometry.position.y -= bone.boneLength/2
-//         }
-//     } else {
-//         for(const bone of meshList){
-//             bone.geometry.applyMatrix4( new THREE.Matrix4().makeTranslation( 0, .5, 0 ) );
-//             // bone.geometry.position.y -= bone.boneLength/2
-//         }
-//     }
+  newEndpoint = new Vector3(Math.cos(.1+a0+a1+a2+a3+a4+a5+a6)*l6, Math.sin(.1+a0+a1+a2+a3+a4+a5+a6)*l6, 0).add(start_l6)
+  newToGoal = new Vector3();
+  newToGoal.copy(goalPos);
+  newToGoal.sub(newEndpoint);
 
-//     whichHand = !whichHand;
+ 
+  if(newToGoal.length() < dist.length()){
+    console.log("asdasd")
+    a6+=.1;
+  }else if(newToGoal.length() > dist.length()){
+    a6-=.1;
+    // console.log("aa")
+  }else {
+    a6 = a6;
+    // console.log("asaaaaaaad")
+  }
 
-// })
+  if(jointLimits) a6 = Math.max(-Math.PI/3, Math.min(Math.PI/3, a6));
+
+  fk();
+
+  newEndpoint = new Vector3(Math.cos(.1+a0+a1+a2+a3+a4+a5+a6)*l6, Math.sin(.1+a0+a1+a2+a3+a4+a5+a6)*l6, 0).add(start_l6)
+  newToGoal = new Vector3();
+  newToGoal.copy(goalPos);
+  newToGoal.sub(newEndpoint);
+
+  console.log(newToGoal.length() - dist.length())
+  if(newToGoal.length() < dist.length() && newToGoal.length() - dist.length() > -.0001){
+    console.log("asdasd")
+    a5+=.1;
+  }else if(newToGoal.length() > dist.length() && newToGoal.length() - dist.length() > -.0001){
+    a5-=.1;
+    // console.log("aa")
+  }else {
+    a5 = a5;
+    // console.log("asaaaaaaad")
+  }
+
+  if(jointLimits) a5 = Math.max(-Math.PI/2, Math.min(.1, a5));
+
+  fk();
+
+  newEndpoint = new Vector3(Math.cos(.1+a0+a1+a2+a3+a4+a5+a6)*l6, Math.sin(.1+a0+a1+a2+a3+a4+a5+a6)*l6, 0).add(start_l6)
+  newToGoal = new Vector3();
+  newToGoal.copy(goalPos);
+  newToGoal.sub(newEndpoint);
+
+ 
+  if(newToGoal.length() < dist.length()){
+    console.log("asdasd")
+    a4+=.1;
+  }else if(newToGoal.length() > dist.length()){
+    a4-=.1;
+    // console.log("aa")
+  }else {
+    a4 = a4;
+    // console.log("asaaaaaaad")
+  }
+
+  if(jointLimits) a4 = Math.max(-Math.PI/2, Math.min(Math.PI/2, a4));
+
+  fk();
+
+  newEndpoint = new Vector3(Math.cos(.1+a0+a1+a2+a3+a4+a5+a6)*l6, Math.sin(.1+a0+a1+a2+a3+a4+a5+a6)*l6, 0).add(start_l6)
+  newToGoal = new Vector3();
+  newToGoal.copy(goalPos);
+  newToGoal.sub(newEndpoint);
+
+ 
+  if(newToGoal.length() < dist.length()&& newToGoal.length() - dist.length() > -.0001){
+    console.log("asdasd")
+    a3+=.1;
+  }else if(newToGoal.length() > dist.length()&& newToGoal.length() - dist.length() > -.0001){
+    a3-=.1;
+    // console.log("aa")
+  }else {
+    a3 = a3;
+    // console.log("asaaaaaaad")
+  }
+
+  if(jointLimits) a3 = Math.max(-Math.PI/2, Math.min(Math.PI/2, a3));
+
+  fk();
+
+  newEndpoint = new Vector3(Math.cos(.1+a0+a1+a2+a3+a4+a5+a6)*l6, Math.sin(.1+a0+a1+a2+a3+a4+a5+a6)*l6, 0).add(start_l6)
+  newToGoal = new Vector3();
+  newToGoal.copy(goalPos);
+  newToGoal.sub(newEndpoint);
+
+ 
+  if(newToGoal.length() < dist.length()&& newToGoal.length() - dist.length() > -.0001){
+    console.log("asdasd")
+    a2+=.1;
+  }else if(newToGoal.length() > dist.length()&& newToGoal.length() - dist.length() > -.0001){
+    a2-=.1;
+    // console.log("aa")
+  }else {
+    a2 = a2;
+    // console.log("asaaaaaaad")
+  }
+
+  if(jointLimits) a2 = Math.max(-Math.PI/2, Math.min(.1, a2));
+
+  fk();
+
+
+  newEndpoint = new Vector3(Math.cos(.1+a0+a1+a2+a3+a4+a5+a6)*l6, Math.sin(.1+a0+a1+a2+a3+a4+a5+a6)*l6, 0).add(start_l6)
+  newToGoal = new Vector3();
+  newToGoal.copy(goalPos);
+  newToGoal.sub(newEndpoint);
+
+ 
+  if(newToGoal.length() < dist.length()&& newToGoal.length() - dist.length() > -.0001){
+    console.log("asdasd")
+    a1+=.1;
+  }else if(newToGoal.length() > dist.length()&& newToGoal.length() - dist.length() > -.0001){
+    a1-=.1;
+    // console.log("aa")
+  }else {
+    a1 = a1;
+    // console.log("asaaaaaaad")
+  }
+
+  if(jointLimits) a1 = Math.max(-Math.PI/3, Math.min(Math.PI/3, a1));
+
+  fk();
+
+
+
+  // const randomAngle = (Math.random()*Math.PI)-(2*Math.PI);
+  // let newEndpoint = new Vector3(Math.cos(a0+a1+a2+a3+a4+a5+a6+randomAngle)*l6, Math.sin(a0+a1+a2+a3+a4+a5+a6+randomAngle)*l6, 0).add(start_l6)
+  // let newToGoal = new Vector3();
+  // newToGoal.copy(goalPos);
+  // newToGoal.sub(newEndpoint);
+ 
+  // if(newToGoal.length() < dist.length()){
+  //   a6+=randomAngle;
+  //   return;
+  // }
+
+  // let newEndpoint = new Vector3(Math.cos(a0+a1+a2+a3+a4+a5+randomAngle)*l6, Math.sin(a0+a1+a2+a3+a4+a5+randomAngle)*l6, 0).add(start_l5)
+  // let newToGoal = new Vector3();
+  // newToGoal.copy(goalPos);
+  // newToGoal.sub(newEndpoint);
+
+  // if()
+
+  return;
+}
