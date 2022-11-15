@@ -45,6 +45,14 @@ function onWindowResize() {
 }
 window.addEventListener('resize', onWindowResize);
 
+//UI
+const ui = document.getElementById("check");
+const solver = false;
+
+// ui?.addEventListener("change",(e)=>{
+  
+// })
+
 function generateFloor() {
     // TEXTURE
     const textureLoader = new THREE.TextureLoader();
@@ -457,23 +465,23 @@ var render = function () {
 
 render();
 
-let whichHand = true;
+// let whichHand = true;
 
-document.addEventListener("click", (e)=>{
-    e.preventDefault();
+// document.addEventListener("click", (e)=>{
+//     e.preventDefault();
 
-    if(whichHand){
-        for(const bone of meshList){
-            bone.geometry.applyMatrix4( new THREE.Matrix4().makeTranslation( 0, -.5, 0 ) );
-            // bone.geometry.position.y -= bone.boneLength/2
-        }
-    } else {
-        for(const bone of meshList){
-            bone.geometry.applyMatrix4( new THREE.Matrix4().makeTranslation( 0, .5, 0 ) );
-            // bone.geometry.position.y -= bone.boneLength/2
-        }
-    }
+//     if(whichHand){
+//         for(const bone of meshList){
+//             bone.geometry.applyMatrix4( new THREE.Matrix4().makeTranslation( 0, -.5, 0 ) );
+//             // bone.geometry.position.y -= bone.boneLength/2
+//         }
+//     } else {
+//         for(const bone of meshList){
+//             bone.geometry.applyMatrix4( new THREE.Matrix4().makeTranslation( 0, .5, 0 ) );
+//             // bone.geometry.position.y -= bone.boneLength/2
+//         }
+//     }
 
-    whichHand = !whichHand;
+//     whichHand = !whichHand;
 
-})
+// })
